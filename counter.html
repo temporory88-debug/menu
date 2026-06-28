@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moon Light Cafe - Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gold: #C9A84C; --bg: #0a0a0a; --card: #161616; --card2: #1e1e1e;
+  --text: #f0e6c8; --dim: #666;
+  --green: #22c55e; --red: #ef4444; --orange: #f97316; --blue: #3b82f6;
+}
+body { background: var(--bg); font-family: 'Poppins', sans-serif; color: var(--text); min-height: 100vh; padding-bottom: 30px; }
+
+.header { background: linear-gradient(160deg,#1a1200,#0a0800); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 300; }
+.logo { font-family:'Cinzel',serif; font-size:17px; color:var(--gold); }
+.nav-links { display:flex; gap:6px; }
+.nav-link { padding:5px 10px; border-radius:16px; font-size:10px; font-weight:700; text-decoration:none; color:var(--dim); border:1px solid #2a2a2a; }
+.nav-link.active { background:var(--gold); color:#000; border-color:var(--gold); }
+
+.page-tabs { display:flex; background:#111; border-bottom:1px solid #222; position:sticky; top:48px; z-index:200; }
+.page-tab { flex:1; padding:10px; text-align:center; font-size:11px; font-weight:700; color:var(--dim); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+.page-tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+
+/* NEW ORDER TOAST */
+.toast { position:fixed; top:100px; left:50%; transform:translateX(-50%) translateY(-120px); background:var(--orange); color:#fff; padding:12px 22px; border-radius:30px; font-size:13px; font-weight:700; z-index:999; transition:transform .4s; box-shadow:0 4px 20px rgba(249,115,22,.5); white-space:nowrap; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+.stats-bar { display:flex; gap:8px; padding:12px 14px; overflow-x:auto; scrollbar-width:none; }
+.stats-bar::-webkit-scrollbar { display:none; }
+.stat-card { flex-shrink:0; background:var(--card); border:1px solid #222; border-radius:12px; padding:10px 14px; text-align:center; min-width:80px; }
+.stat-num { font-size:20px; font-weight:700; color:var(--gold); line-height:1; }
+.stat-label { font-size:9px; color:var(--dim); margin-top:3px; }
+
+/* TABLES */
+.tables-page { display:none; } .tables-page.show { display:block; }
+.tables-legend { display:flex; gap:12px; padding:8px 14px 4px; font-size:10px; color:var(--dim); flex-wrap:wrap; }
+.legend-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+.tables-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:10px 14px; }
+.table-btn { aspect-ratio:1; border-radius:14px; border:2px solid #222; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; gap:3px; transition:transform .15s; }
+.table-btn:active { transform:scale(.95); }
+.table-btn .t-num { font-family:'Cinzel',serif; font-size:16px; font-weight:700; }
+.table-btn .t-status { font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+.table-btn .t-amt { font-size:9px; margin-top:1px; }
+.table-btn.empty { border-color:#222; } .table-btn.empty .t-num,.table-btn.empty .t-status { color:var(--dim); }
+.table-btn.occupied { border-color:var(--orange); background:#1a0e00; } .table-btn.occupied .t-num,.table-btn.occupied .t-status { color:var(--orange); }
+.table-btn.preparing { border-color:var(--blue); background:#0a1020; } .table-btn.preparing .t-num,.table-btn.preparing .t-status { color:var(--blue); }
+.table-btn.ready { border-color:var(--green); background:#0a1a0a; } .table-btn.ready .t-num,.table-btn.ready .t-status { color:var(--green); }
+.table-btn.billing { border-color:var(--gold); background:#1a1200; animation:goldpulse 1.5s infinite; } .table-btn.billing .t-num,.table-btn.billing .t-status { color:var(--gold); }
+@keyframes goldpulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.4)} 50%{box-shadow:0 0 0 6px rgba(201,168,76,0)} }
+
+/* ORDERS */
+.orders-page { display:none; } .orders-page.show { display:block; }
+.filter-bar { display:flex; gap:7px; padding:10px 14px 4px; overflow-x:auto; scrollbar-width:none; }
+.filter-bar::-webkit-scrollbar { display:none; }
+.filter-btn { flex-shrink:0; padding:5px 12px; border-radius:14px; font-size:11px; font-weight:600; border:1px solid #2a2a2a; background:var(--card); color:var(--dim); cursor:pointer; white-space:nowrap; }
+.filter-btn.active { background:var(--gold); color:#000; border-color:var(--gold); }
+.orders-list { padding:8px 14px 20px; display:flex; flex-direction:column; gap:8px; }
+.order-card { background:var(--card); border:1px solid #222; border-radius:14px; padding:13px; border-left:4px solid #333; }
+.order-card.new { border-left-color:var(--orange); } .order-card.preparing { border-left-color:var(--blue); } .order-card.ready { border-left-color:var(--green); } .order-card.served { border-left-color:#333; opacity:.6; }
+.order-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.order-table-label { font-family:'Cinzel',serif; font-size:15px; color:var(--gold); font-weight:700; }
+.order-time { font-size:10px; color:var(--dim); }
+.status-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:10px; }
+.s-new{background:#2a1500;color:var(--orange);border:1px solid var(--orange);} .s-preparing{background:#0d1a2e;color:#60a5fa;border:1px solid var(--blue);} .s-ready{background:#0a1e0a;color:var(--green);border:1px solid var(--green);} .s-served{background:#1a1a1a;color:var(--dim);border:1px solid #333;}
+.order-items-list { font-size:11px; color:var(--dim); margin-bottom:8px; }
+.order-item-row { display:flex; justify-content:space-between; padding:2px 0; }
+.order-note { font-size:10px; color:var(--orange); font-style:italic; margin-bottom:6px; }
+.order-total-row { display:flex; justify-content:space-between; font-size:13px; font-weight:700; border-top:1px solid #222; padding-top:7px; }
+.action-btns { display:flex; gap:6px; margin-top:8px; }
+.btn { flex:1; padding:8px 4px; border:none; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; }
+.btn-accept{background:var(--orange);color:#fff;} .btn-ready-mark{background:var(--blue);color:#fff;} .btn-serve{background:var(--green);color:#fff;} .btn-bill{background:var(--gold);color:#000;} .btn-delete{background:#1a0000;color:var(--red);border:1px solid var(--red);flex:0;padding:8px 10px;}
+
+/* MODALS */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:400; display:none; align-items:flex-end; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:#111; border-top:2px solid var(--gold); border-radius:20px 20px 0 0; padding:18px 16px 28px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; position:relative; }
+.modal-title { font-family:'Cinzel',serif; font-size:16px; color:var(--gold); text-align:center; margin-bottom:14px; }
+.close-modal { position:absolute; right:14px; top:14px; background:none; border:none; color:var(--dim); font-size:22px; cursor:pointer; }
+
+.bill-item-row { display:flex; justify-content:space-between; padding:6px 0; font-size:12px; border-bottom:1px solid #1e1e1e; }
+.input-label { font-size:10px; color:var(--dim); margin-bottom:4px; margin-top:8px; }
+.input-field { width:100%; background:var(--card2); border:1px solid #2a2a2a; border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Poppins',sans-serif; font-size:13px; outline:none; }
+.input-field:focus { border-color:var(--gold); }
+.bill-subtotal-row { display:flex; justify-content:space-between; padding:6px 0; font-size:12px; color:var(--dim); }
+.bill-net-row { display:flex; justify-content:space-between; padding:10px 0 6px; font-size:15px; font-weight:700; border-top:1px solid #2a2a2a; }
+.pay-methods { display:flex; gap:8px; margin:10px 0 6px; }
+.pay-btn { flex:1; padding:9px 6px; border-radius:8px; border:1px solid #2a2a2a; background:var(--card2); color:var(--dim); font-size:12px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; }
+.pay-btn.selected { background:var(--gold); color:#000; border-color:var(--gold); }
+.change-box { border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; text-align:center; margin:8px 0; display:none; }
+.change-ok { background:#0a1e0a; border:1px solid var(--green); color:var(--green); }
+.change-neg { background:#1a0000; border:1px solid var(--red); color:var(--red); }
+.complete-btn { width:100%; padding:14px; background:var(--gold); color:#000; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; margin-top:8px; }
+.complete-btn:disabled { opacity:.5; cursor:not-allowed; }
+.print-btn { width:100%; padding:11px; background:#1a1200; color:var(--gold); border:1px solid var(--gold); border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; margin-top:8px; }
+
+.t-order-block { background:var(--card2); border-radius:10px; padding:10px; margin-bottom:8px; border-left:3px solid #333; }
+.t-order-block.new{border-left-color:var(--orange);} .t-order-block.preparing{border-left-color:var(--blue);} .t-order-block.ready{border-left-color:var(--green);}
+.t-order-hdr { display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px; }
+.t-order-items { font-size:11px; color:var(--dim); }
+.t-free-btn { width:100%; padding:10px; background:#1a0000; color:var(--red); border:1px solid var(--red); border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; margin-top:8px; }
+.empty-state { text-align:center; padding:50px 20px; color:var(--dim); }
+.empty-state .icon { font-size:44px; margin-bottom:12px; }
+
+/* ── PRINT BILL RECEIPT ── */
+@media print {
+  body > *:not(#print-receipt) { display: none !important; }
+  #print-receipt { display: block !important; }
+}
+#print-receipt {
+  display: none;
+  font-family: 'Courier New', monospace;
+  max-width: 300px;
+  margin: 0 auto;
+  padding: 10px;
+  color: #000;
+  font-size: 12px;
+}
+.receipt-header { text-align:center; border-bottom:1px dashed #000; padding-bottom:8px; margin-bottom:8px; }
+.receipt-cafe { font-size:16px; font-weight:700; letter-spacing:.1em; }
+.receipt-sub { font-size:9px; color:#555; margin-top:2px; }
+.receipt-meta { font-size:10px; margin-bottom:6px; }
+.receipt-items { border-bottom:1px dashed #000; padding-bottom:8px; margin-bottom:8px; }
+.receipt-item { display:flex; justify-content:space-between; margin:3px 0; font-size:11px; }
+.receipt-totals { font-size:12px; }
+.receipt-total-row { display:flex; justify-content:space-between; margin:3px 0; }
+.receipt-total-row.net { font-weight:700; font-size:14px; border-top:1px solid #000; padding-top:5px; margin-top:5px; }
+.receipt-footer { text-align:center; margin-top:10px; border-top:1px dashed #000; padding-top:8px; font-size:10px; color:#555; }
+</style>
+</head>
+<body>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">🔔 नयाँ Order आयो!</div>
+
+<div class="header">
+  <div class="logo">🌙 Counter</div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">🍽️ Menu</a>
+    <a href="counter.html" class="nav-link active">🖥️ Counter</a>
+    <a href="kitchen.html" class="nav-link">🍳 Kitchen</a>
+    <a href="admin.html" class="nav-link">📊 Admin</a>
+  </div>
+</div>
+
+<div class="page-tabs">
+  <div class="page-tab active" id="tab-tables" onclick="switchPage('tables')">🪑 Tables</div>
+  <div class="page-tab" id="tab-orders" onclick="switchPage('orders')">📋 Orders</div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-num" id="stat-empty">0</div><div class="stat-label">⚪ Empty</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-occupied">0</div><div class="stat-label">🟠 Active</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-ready">0</div><div class="stat-label">🟢 Ready</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-new-orders">0</div><div class="stat-label">🔴 नयाँ</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-today">Rs.0</div><div class="stat-label">💰 आज</div></div>
+</div>
+
+<!-- TABLES PAGE -->
+<div class="tables-page show" id="tables-page">
+  <div class="tables-legend">
+    <span><span class="legend-dot" style="background:#333"></span>Empty</span>
+    <span><span class="legend-dot" style="background:var(--orange)"></span>New</span>
+    <span><span class="legend-dot" style="background:var(--blue)"></span>Cooking</span>
+    <span><span class="legend-dot" style="background:var(--green)"></span>Ready</span>
+    <span><span class="legend-dot" style="background:var(--gold)"></span>Billing</span>
+  </div>
+  <div class="tables-grid" id="tables-grid"></div>
+</div>
+
+<!-- ORDERS PAGE -->
+<div class="orders-page" id="orders-page">
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterOrders('all',this)">📋 सबै</button>
+    <button class="filter-btn" onclick="filterOrders('new',this)">🔴 नयाँ</button>
+    <button class="filter-btn" onclick="filterOrders('preparing',this)">🔵 बन्दै</button>
+    <button class="filter-btn" onclick="filterOrders('ready',this)">🟢 Ready</button>
+    <button class="filter-btn" onclick="filterOrders('served',this)">✅ Served</button>
+  </div>
+  <div class="orders-list" id="orders-list"></div>
+</div>
+
+<!-- TABLE DETAIL MODAL -->
+<div class="modal-overlay" id="table-modal">
+  <div class="modal">
+    <button class="close-modal" onclick="closeTableModal()">✕</button>
+    <div class="modal-title" id="tmodal-title">Table —</div>
+    <div id="tmodal-content"></div>
+  </div>
+</div>
+
+<!-- BILL MODAL -->
+<div class="modal-overlay" id="bill-modal">
+  <div class="modal">
+    <button class="close-modal" onclick="closeBillModal()">✕</button>
+    <div class="modal-title">🧾 Bill — Table <span id="bill-table-num">—</span></div>
+    <div id="bill-items-html"></div>
+    <div class="bill-subtotal-row"><span>Subtotal</span><span id="bill-subtotal">Rs.0</span></div>
+    <div class="input-label">Discount (Rs.)</div>
+    <input class="input-field" id="discount-input" type="number" min="0" placeholder="0" oninput="calcBill()">
+    <div class="bill-net-row"><span>Net Total</span><span style="color:var(--gold)" id="bill-net">Rs.0</span></div>
+    <div class="pay-methods">
+      <button class="pay-btn selected" id="pay-cash" onclick="selectPay('cash')">💵 Cash</button>
+      <button class="pay-btn" id="pay-qr" onclick="selectPay('qr')">📱 QR</button>
+      <button class="pay-btn" id="pay-card" onclick="selectPay('card')">💳 Card</button>
+    </div>
+    <div id="cash-row">
+      <div class="input-label">Tendered Amount (Rs.)</div>
+      <input class="input-field" id="paid-input" type="number" placeholder="दिएको रकम" oninput="calcChange()">
+    </div>
+    <div class="change-box change-ok" id="change-box"></div>
+    <button class="complete-btn" id="complete-btn" onclick="completeBill()">✅ Bill Complete गर्नुस्</button>
+    <button class="print-btn" onclick="printBillPreview()">🖨️ Bill Print गर्नुस्</button>
+  </div>
+</div>
+
+<!-- PRINT RECEIPT (hidden, shown only on print) -->
+<div id="print-receipt">
+  <div class="receipt-header">
+    <div class="receipt-cafe">🌙 MOON LIGHT CAFE</div>
+    <div class="receipt-sub">Good Coffee · Good Food · Good Moments</div>
+    <div class="receipt-sub" style="margin-top:4px" id="r-datetime"></div>
+  </div>
+  <div class="receipt-meta">
+    <div>Table: <strong id="r-table"></strong></div>
+    <div>Bill #: <span id="r-billno"></span></div>
+  </div>
+  <div class="receipt-items" id="r-items"></div>
+  <div class="receipt-totals">
+    <div class="receipt-total-row"><span>Subtotal</span><span id="r-subtotal"></span></div>
+    <div class="receipt-total-row" id="r-disc-row" style="display:none;color:#c00"><span>Discount</span><span id="r-discount"></span></div>
+    <div class="receipt-total-row net"><span>NET TOTAL</span><span id="r-net"></span></div>
+    <div class="receipt-total-row" id="r-paid-row"><span>Paid (<span id="r-paymethod"></span>)</span><span id="r-paid"></span></div>
+    <div class="receipt-total-row" id="r-change-row"><span>Change</span><span id="r-change"></span></div>
+  </div>
+  <div class="receipt-footer">
+    धन्यवाद! फेरि आउनुहोस् 🙏<br>
+    ━━━━━━━━━━━━━━━━━━━━━━
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove, push, set }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FC = {
+  apiKey:"AIzaSyDF-nLSnQH87KI_GTnDJXsBYzH922Ce1L4",
+  authDomain:"menu-4819f.firebaseapp.com", projectId:"menu-4819f",
+  storageBucket:"menu-4819f.firebasestorage.app",
+  messagingSenderId:"449946304567",
+  appId:"1:449946304567:web:d2c5f22ab87865aa507fb2"
+};
+const app = initializeApp(FC);
+const db  = getDatabase(app);
+
+const TOTAL_TABLES = 16;
+let allOrders={}, allTables={}, currentFilter='all';
+let currentBillOrderIds=[], currentBillTableNum=null, payMethod='cash';
+let prevOrderIds=new Set();
+let lastBillData=null; // for print
+
+// ── SOUND ──
+const actx = new (window.AudioContext||window.webkitAudioContext)();
+function beep(freq=880,dur=0.4,type='sine'){
+  try{
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.connect(g);g.connect(actx.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.35,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+dur);
+    o.start();o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+function playNewOrder(){ beep(880,.25);setTimeout(()=>beep(1100,.3),260); }
+function playSuccess(){ beep(1046,.2);setTimeout(()=>beep(1318,.25),220);setTimeout(()=>beep(1568,.35),460); }
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── PUSH NOTIFICATION ──
+function requestNotifPermission(){
+  if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+}
+function pushNotif(title,body){
+  if('Notification' in window && Notification.permission==='granted'){
+    new Notification(title,{body,icon:'🌙'});
+  }
+}
+
+// ── FIREBASE LISTENERS ──
+onValue(ref(db,'tables'),snap=>{
+  allTables={};
+  if(snap.exists()) snap.forEach(c=>{ allTables[c.key]=c.val(); });
+  renderTables(); updateStats();
+});
+
+onValue(ref(db,'orders'),snap=>{
+  allOrders={};
+  const cur=new Set(); let sound=false, newCount=0;
+  if(snap.exists()) snap.forEach(c=>{
+    const o={id:c.key,...c.val()};
+    allOrders[c.key]=o; cur.add(c.key);
+    if(!prevOrderIds.has(c.key)&&o.status==='new'){ sound=true; newCount++; }
+  });
+  prevOrderIds=cur;
+  if(sound){
+    playNewOrder();
+    showToast(`🔔 नयाँ Order आयो! (Table ${Object.values(allOrders).filter(o=>o.status==='new').slice(-1)[0]?.tableNumber||''})`);
+    pushNotif('🌙 Moon Light Cafe','नयाँ order आयो! Counter हेर्नुस्।');
+  }
+  syncTableStatuses(); renderTables(); renderOrders(); updateStats();
+});
+
+onValue(ref(db,'sales/'+todayKey()),snap=>{
+  const d=snap.val()||{};
+  document.getElementById('stat-today').textContent='Rs.'+(d.totalSales||0);
+});
+
+function todayKey(){ return new Date().toISOString().split('T')[0]; }
+
+function syncTableStatuses(){
+  const map={};
+  Object.values(allOrders).forEach(o=>{
+    const k='table_'+o.tableNumber;
+    if(!map[k]) map[k]=[];
+    map[k].push(o);
+  });
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const k='table_'+i;
+    const orders=(map[k]||[]).filter(o=>o.status!=='served');
+    let s='empty';
+    if(orders.length){
+      if(orders.some(o=>o.status==='new')) s='occupied';
+      else if(orders.every(o=>o.status==='ready')) s='ready';
+      else s='preparing';
+    }
+    const cur=allTables[k];
+    if(!cur||(cur.status!==s&&cur.status!=='billing')) allTables[k]={status:s};
+  }
+}
+
+// ── RENDER TABLES ──
+function renderTables(){
+  const grid=document.getElementById('tables-grid');
+  let h='';
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const k='table_'+i, t=allTables[k]||{status:'empty'};
+    const orders=Object.values(allOrders).filter(o=>String(o.tableNumber)===String(i)&&o.status!=='served');
+    const total=orders.reduce((s,o)=>s+(o.totalPrice||0),0);
+    const icon={empty:'○',occupied:'🟠',preparing:'🔵',ready:'🟢',billing:'🟡'}[t.status]||'○';
+    const lbl={empty:'Empty',occupied:'New',preparing:'Cooking',ready:'Ready!',billing:'Bill'}[t.status]||t.status;
+    h+=`<div class="table-btn ${t.status}" onclick="openTableModal(${i})">
+      <div style="font-size:11px">${icon}</div>
+      <div class="t-num">${i}</div>
+      <div class="t-status">${lbl}</div>
+      ${total>0?`<div class="t-amt" style="color:var(--gold)">Rs.${total}</div>`:''}
+    </div>`;
+  }
+  grid.innerHTML=h;
+}
+
+// ── UPDATE STATS ──
+function updateStats(){
+  let empty=0,occ=0,ready=0,newO=0;
+  for(let i=1;i<=TOTAL_TABLES;i++){
+    const s=(allTables['table_'+i]||{status:'empty'}).status;
+    if(s==='empty') empty++;
+    else if(s==='occupied'||s==='preparing'||s==='billing') occ++;
+    if(s==='ready') ready++;
+  }
+  Object.values(allOrders).forEach(o=>{ if(o.status==='new') newO++; });
+  document.getElementById('stat-empty').textContent=empty;
+  document.getElementById('stat-occupied').textContent=occ;
+  document.getElementById('stat-ready').textContent=ready;
+  document.getElementById('stat-new-orders').textContent=newO;
+}
+
+// ── RENDER ORDERS ──
+function renderOrders(){
+  let orders=Object.values(allOrders).sort((a,b)=>{
+    const p={new:0,preparing:1,ready:2,served:3};
+    return (p[a.status]||0)-(p[b.status]||0);
+  });
+  if(currentFilter!=='all') orders=orders.filter(o=>o.status===currentFilter);
+  const list=document.getElementById('orders-list');
+  if(!orders.length){ list.innerHTML=`<div class="empty-state"><div class="icon">✅</div><div>कुनै order छैन</div></div>`; return; }
+  list.innerHTML=orders.map(o=>{
+    const items=Array.isArray(o.items)?o.items:[];
+    const time=o.timestamp?new Date(o.timestamp).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}):'';
+    const sLabel={new:'🔴 नयाँ',preparing:'🔵 बन्दै',ready:'🟢 Ready',served:'✅ Served'}[o.status]||o.status;
+    const sCls={new:'s-new',preparing:'s-preparing',ready:'s-ready',served:'s-served'}[o.status]||'';
+    let btns='';
+    if(o.status==='new')       btns=`<button class="btn btn-accept" onclick="setStatus('${o.id}','preparing')">🍳 Accept</button><button class="btn btn-bill" onclick="openBillForOrder('${o.id}')">🧾 Bill</button><button class="btn btn-delete" onclick="delOrder('${o.id}')">🗑️</button>`;
+    else if(o.status==='preparing') btns=`<button class="btn btn-ready-mark" onclick="setStatus('${o.id}','ready')">✅ Ready</button><button class="btn btn-bill" onclick="openBillForOrder('${o.id}')">🧾 Bill</button>`;
+    else if(o.status==='ready')     btns=`<button class="btn btn-serve" onclick="setStatus('${o.id}','served')">🍽️ Served</button><button class="btn btn-bill" onclick="openBillForOrder('${o.id}')">🧾 Bill</button>`;
+    else if(o.status==='served')    btns=`<button class="btn btn-bill" onclick="openBillForOrder('${o.id}')">🧾 Bill</button><button class="btn btn-delete" onclick="delOrder('${o.id}')">🗑️</button>`;
+    return `<div class="order-card ${o.status}">
+      <div class="order-header">
+        <div class="order-table-label">Table ${o.tableNumber}</div>
+        <div style="display:flex;gap:6px;align-items:center"><span class="order-time">${time}</span><span class="status-badge ${sCls}">${sLabel}</span></div>
+      </div>
+      ${o.note?`<div class="order-note">💬 ${o.note}</div>`:''}
+      <div class="order-items-list">${items.map(i=>`<div class="order-item-row"><span>${i.name} ×${i.qty}</span><span>Rs.${i.qty*i.price}</span></div>`).join('')}</div>
+      <div class="order-total-row"><span>जम्मा</span><span style="color:var(--gold)">Rs.${o.totalPrice||0}</span></div>
+      <div class="action-btns">${btns}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── TABLE MODAL ──
+window.openTableModal=function(num){
+  const k='table_'+num, t=allTables[k]||{status:'empty'};
+  const active=Object.values(allOrders).filter(o=>String(o.tableNumber)===String(num)&&o.status!=='served');
+  const total=active.reduce((s,o)=>s+(o.totalPrice||0),0);
+  const lbl={empty:'Empty',occupied:'Occupied',preparing:'Cooking',ready:'Ready!',billing:'Billing'}[t.status]||t.status;
+  document.getElementById('tmodal-title').textContent=`🪑 Table ${num} — ${lbl}`;
+  let h='';
+  if(active.length){
+    active.forEach(o=>{
+      const items=Array.isArray(o.items)?o.items:[];
+      const sLabel={new:'🔴 नयाँ',preparing:'🔵 बन्दै',ready:'🟢 Ready'}[o.status]||o.status;
+      h+=`<div class="t-order-block ${o.status}">
+        <div class="t-order-hdr"><span style="font-weight:700">${sLabel}</span><span style="color:var(--gold)">Rs.${o.totalPrice||0}</span></div>
+        <div class="t-order-items">${items.map(i=>i.name+' ×'+i.qty).join(' · ')}</div>
+      </div>`;
+    });
+    h+=`<div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--gold);padding:10px 0 6px;border-top:1px solid #222"><span>कुल जम्मा</span><span>Rs.${total}</span></div>`;
+    h+=`<button class="complete-btn" onclick="closeTableModal();openBillForTable(${num})">🧾 Bill गर्नुस् (Rs.${total})</button>`;
+    h+=`<button class="t-free-btn" onclick="freeTable(${num})">🆓 Table खाली गर्नुस् (Cancel)</button>`;
+  } else {
+    h=`<div class="empty-state" style="padding:30px 0"><div class="icon">🪑</div><div>Table खाली छ</div></div>`;
+  }
+  document.getElementById('tmodal-content').innerHTML=h;
+  document.getElementById('table-modal').classList.add('show');
+};
+window.closeTableModal=function(){ document.getElementById('table-modal').classList.remove('show'); };
+window.freeTable=function(num){
+  if(!confirm(`Table ${num} को सबै orders cancel गर्ने?`)) return;
+  Object.values(allOrders).filter(o=>String(o.tableNumber)===String(num)&&o.status!=='served').forEach(o=>remove(ref(db,'orders/'+o.id)));
+  update(ref(db,'tables/table_'+num),{status:'empty',currentBillId:null});
+  closeTableModal();
+};
+
+// ── BILL MODAL ──
+function getNetTotal(){
+  const sub=Object.values(allOrders).filter(o=>currentBillOrderIds.includes(o.id)).reduce((s,o)=>s+(o.totalPrice||0),0);
+  const disc=parseInt(document.getElementById('discount-input').value)||0;
+  return Math.max(0,sub-disc);
+}
+
+window.openBillForTable=function(num){
+  const orders=Object.values(allOrders).filter(o=>String(o.tableNumber)===String(num)&&o.status!=='served');
+  if(!orders.length){ alert('Active orders छैन'); return; }
+  currentBillOrderIds=orders.map(o=>o.id); currentBillTableNum=num;
+  update(ref(db,'tables/table_'+num),{status:'billing'});
+  showBillModal(num,orders);
+};
+window.openBillForOrder=function(oid){
+  const o=allOrders[oid]; if(!o) return;
+  currentBillOrderIds=[oid]; currentBillTableNum=o.tableNumber;
+  update(ref(db,'tables/table_'+o.tableNumber),{status:'billing'});
+  showBillModal(o.tableNumber,[o]);
+};
+
+function showBillModal(num,orders){
+  document.getElementById('bill-table-num').textContent=num;
+  const allItems={};
+  orders.forEach(o=>(Array.isArray(o.items)?o.items:[]).forEach(i=>{
+    if(!allItems[i.name]) allItems[i.name]={name:i.name,price:i.price,qty:0};
+    allItems[i.name].qty+=i.qty;
+  }));
+  const sub=Object.values(allItems).reduce((s,i)=>s+i.qty*i.price,0);
+  document.getElementById('bill-items-html').innerHTML=Object.values(allItems).map(i=>`<div class="bill-item-row"><span>${i.name} ×${i.qty}</span><span>Rs.${i.qty*i.price}</span></div>`).join('');
+  document.getElementById('bill-subtotal').textContent='Rs.'+sub;
+  document.getElementById('discount-input').value='';
+  document.getElementById('paid-input').value='';
+  document.getElementById('change-box').style.display='none';
+  selectPay('cash'); calcBill();
+  document.getElementById('bill-modal').classList.add('show');
+}
+
+window.closeBillModal=function(){
+  document.getElementById('bill-modal').classList.remove('show');
+  if(currentBillTableNum){
+    const orders=Object.values(allOrders).filter(o=>String(o.tableNumber)===String(currentBillTableNum)&&o.status!=='served');
+    if(orders.length){
+      const s=orders.some(o=>o.status==='new')?'occupied':orders.every(o=>o.status==='ready')?'ready':'preparing';
+      update(ref(db,'tables/table_'+currentBillTableNum),{status:s});
+    } else { update(ref(db,'tables/table_'+currentBillTableNum),{status:'empty'}); }
+  }
+  currentBillOrderIds=[]; currentBillTableNum=null;
+};
+
+window.selectPay=function(m){
+  payMethod=m;
+  ['cash','qr','card'].forEach(x=>document.getElementById('pay-'+x).classList.remove('selected'));
+  document.getElementById('pay-'+m).classList.add('selected');
+  document.getElementById('cash-row').style.display=m==='cash'?'block':'none';
+  if(m!=='cash') document.getElementById('change-box').style.display='none';
+};
+
+window.calcBill=function(){
+  const net=getNetTotal();
+  document.getElementById('bill-net').textContent='Rs.'+net;
+};
+
+window.calcChange=function(){
+  const net=getNetTotal();
+  const paid=parseInt(document.getElementById('paid-input').value)||0;
+  if(paid>0){
+    const change=paid-net;
+    const box=document.getElementById('change-box');
+    box.style.display='block';
+    box.className='change-box '+(change<0?'change-neg':'change-ok');
+    box.textContent=change<0?`⚠️ अझै Rs.${Math.abs(change)} बाँकी छ`:`🔄 फिर्ता दिनुस्: Rs.${change}`;
+  }
+};
+
+window.completeBill=async function(){
+  const btn=document.getElementById('complete-btn');
+  btn.disabled=true; btn.textContent='⏳ Processing...';
+  const orders=Object.values(allOrders).filter(o=>currentBillOrderIds.includes(o.id));
+  const sub=orders.reduce((s,o)=>s+(o.totalPrice||0),0);
+  const disc=parseInt(document.getElementById('discount-input').value)||0;
+  const net=Math.max(0,sub-disc);
+  const paid=payMethod==='cash'?(parseInt(document.getElementById('paid-input').value)||net):net;
+  const change=Math.max(0,paid-net);
+  const billNo='B'+Date.now().toString().slice(-6);
+  const now=Date.now();
+  try{
+    // Merge items
+    const allItems={};
+    orders.forEach(o=>(Array.isArray(o.items)?o.items:[]).forEach(i=>{
+      if(!allItems[i.name]) allItems[i.name]={name:i.name,price:i.price,qty:0};
+      allItems[i.name].qty+=i.qty;
+    }));
+    const mergedItems=Object.values(allItems);
+
+    // Save bill
+    const br=push(ref(db,'bills'));
+    await set(br,{
+      billNo, tableNumber:currentBillTableNum, orderIds:currentBillOrderIds,
+      items:mergedItems, subTotal:sub, discount:disc, netTotal:net,
+      paidAmount:paid, returnAmount:change, paymentMethod:payMethod,
+      status:'completed', completedAt:now
+    });
+
+    // Update orders
+    for(const o of orders) await update(ref(db,'orders/'+o.id),{status:'served',completedAt:now});
+
+    // Free table
+    await update(ref(db,'tables/table_'+currentBillTableNum),{status:'empty',currentBillId:br.key});
+
+    // Daily sales
+    const sk=todayKey();
+    onValue(ref(db,'sales/'+sk),snap=>{
+      const p=snap.val()||{totalSales:0,cash:0,qr:0,card:0,totalOrders:0};
+      set(ref(db,'sales/'+sk),{
+        totalSales:(p.totalSales||0)+net,
+        cash:(p.cash||0)+(payMethod==='cash'?net:0),
+        qr:(p.qr||0)+(payMethod==='qr'?net:0),
+        card:(p.card||0)+(payMethod==='card'?net:0),
+        totalOrders:(p.totalOrders||0)+1
+      });
+    },{onlyOnce:true});
+
+    // Store for print
+    lastBillData={ billNo, tableNumber:currentBillTableNum, items:mergedItems, subTotal:sub, disc, net, paid, change, payMethod, now };
+
+    document.getElementById('bill-modal').classList.remove('show');
+    currentBillOrderIds=[]; currentBillTableNum=null;
+    playSuccess();
+    showToast(`✅ Table ${lastBillData.tableNumber} Bill Complete!`);
+    btn.disabled=false; btn.textContent='✅ Bill Complete गर्नुस्';
+
+    if(confirm(`✅ Bill Complete!\nTable ${lastBillData.tableNumber} | Rs.${net} | Change: Rs.${change}\n\n🖨️ Bill print गर्ने?`)){
+      printReceipt(lastBillData);
+    }
+  } catch(e){
+    alert('❌ Error: '+e.message);
+    btn.disabled=false; btn.textContent='✅ Bill Complete गर्नुस्';
+  }
+};
+
+// ── PRINT RECEIPT ──
+window.printBillPreview=function(){
+  const orders=Object.values(allOrders).filter(o=>currentBillOrderIds.includes(o.id));
+  const sub=orders.reduce((s,o)=>s+(o.totalPrice||0),0);
+  const disc=parseInt(document.getElementById('discount-input').value)||0;
+  const net=Math.max(0,sub-disc);
+  const paid=payMethod==='cash'?(parseInt(document.getElementById('paid-input').value)||net):net;
+  const allItems={};
+  orders.forEach(o=>(Array.isArray(o.items)?o.items:[]).forEach(i=>{
+    if(!allItems[i.name]) allItems[i.name]={name:i.name,price:i.price,qty:0};
+    allItems[i.name].qty+=i.qty;
+  }));
+  printReceipt({
+    billNo:'PREVIEW', tableNumber:currentBillTableNum,
+    items:Object.values(allItems), subTotal:sub, disc, net, paid,
+    change:Math.max(0,paid-net), payMethod, now:Date.now()
+  });
+};
+
+function printReceipt(d){
+  const dt=new Date(d.now);
+  document.getElementById('r-datetime').textContent=dt.toLocaleString('ne-NP');
+  document.getElementById('r-table').textContent=d.tableNumber;
+  document.getElementById('r-billno').textContent=d.billNo;
+  document.getElementById('r-items').innerHTML=d.items.map(i=>`<div class="receipt-item"><span>${i.name} ×${i.qty}</span><span>Rs.${i.qty*i.price}</span></div>`).join('');
+  document.getElementById('r-subtotal').textContent='Rs.'+d.subTotal;
+  const discRow=document.getElementById('r-disc-row');
+  if(d.disc>0){ discRow.style.display='flex'; document.getElementById('r-discount').textContent='-Rs.'+d.disc; } else { discRow.style.display='none'; }
+  document.getElementById('r-net').textContent='Rs.'+d.net;
+  document.getElementById('r-paymethod').textContent={cash:'Cash',qr:'QR',card:'Card'}[d.payMethod]||d.payMethod;
+  document.getElementById('r-paid').textContent='Rs.'+d.paid;
+  document.getElementById('r-change').textContent='Rs.'+d.change;
+  window.print();
+}
+
+// ── GLOBAL ──
+window.setStatus=function(id,s){ update(ref(db,'orders/'+id),{status:s,updatedAt:Date.now()}); };
+window.delOrder=function(id){ if(confirm('Order हटाउने?')) remove(ref(db,'orders/'+id)); };
+window.filterOrders=function(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); renderOrders();
+};
+window.switchPage=function(p){
+  document.getElementById('tables-page').classList.toggle('show',p==='tables');
+  document.getElementById('orders-page').classList.toggle('show',p==='orders');
+  document.getElementById('tab-tables').classList.toggle('active',p==='tables');
+  document.getElementById('tab-orders').classList.toggle('active',p==='orders');
+};
+
+// Request notification permission on load
+requestNotifPermission();
+
+function requestNotifPermission(){
+  if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+}
+function pushNotif(t,b){
+  if('Notification' in window && Notification.permission==='granted') new Notification(t,{body:b});
+}
+</script>
+</body>
+</html>

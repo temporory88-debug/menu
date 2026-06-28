@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moon Light Cafe - Kitchen</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#C9A84C;--bg:#0a0a0a;--card:#161616;--text:#f0e6c8;--dim:#666;--green:#22c55e;--red:#ef4444;--orange:#f97316;--blue:#3b82f6}
+body{background:var(--bg);font-family:'Poppins',sans-serif;color:var(--text);min-height:100vh;padding-bottom:30px}
+
+.header{background:linear-gradient(160deg,#1a1200,#0a0800);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:100}
+.logo{font-family:'Cinzel',serif;font-size:17px;color:var(--gold)}
+.nav-links{display:flex;gap:6px}
+.nav-link{padding:5px 10px;border-radius:16px;font-size:10px;font-weight:700;text-decoration:none;color:var(--dim);border:1px solid #2a2a2a}
+.nav-link.active{background:var(--gold);color:#000;border-color:var(--gold)}
+
+/* TOAST */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--orange);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:999;transition:transform .4s;box-shadow:0 4px 20px rgba(249,115,22,.5);white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.k-stats{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none}
+.k-stats::-webkit-scrollbar{display:none}
+.k-stat{flex-shrink:0;background:var(--card);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;border:1px solid #222;white-space:nowrap}
+.k-stat.new-s{color:var(--orange);border-color:var(--orange)} .k-stat.prep-s{color:var(--blue);border-color:var(--blue)} .k-stat.ready-s{color:var(--green);border-color:var(--green)}
+
+/* VOICE TOGGLE */
+.voice-row{display:flex;align-items:center;gap:10px;padding:4px 14px 8px;font-size:11px;color:var(--dim)}
+.toggle-wrap{display:flex;align-items:center;gap:6px}
+.toggle{width:36px;height:20px;background:#333;border-radius:10px;position:relative;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s}
+.toggle.on::after{left:18px}
+
+/* COLUMNS */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 14px 10px}
+@media(max-width:480px){.cols{grid-template-columns:1fr}}
+.col-head{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding-bottom:8px;border-bottom:2px solid;margin-bottom:10px}
+.col-new .col-head{color:var(--orange);border-color:var(--orange)} .col-prep .col-head{color:var(--blue);border-color:var(--blue)}
+
+.k-card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #222;position:relative}
+.k-card.new{border-left:3px solid var(--orange)} .k-card.preparing{border-left:3px solid var(--blue)}
+.k-card.new.urgent{animation:urgentPulse 1s infinite}
+@keyframes urgentPulse{0%,100%{border-left-color:var(--orange)}50%{border-left-color:var(--red)}}
+.k-table{font-family:'Cinzel',serif;font-size:14px;color:var(--gold);font-weight:700;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.k-timer{font-size:9px;font-family:'Poppins',sans-serif;padding:2px 7px;border-radius:8px;font-weight:700}
+.k-timer.ok{background:#0a1e0a;color:var(--green)} .k-timer.warn{background:#2a1500;color:var(--orange)} .k-timer.late{background:#1a0000;color:var(--red)}
+.k-item{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #1a1a1a}
+.k-item:last-child{border:none}
+.k-item-qty{color:var(--gold);font-weight:700}
+.k-note{font-size:10px;color:var(--orange);margin:5px 0 3px;font-style:italic}
+.k-btn{width:100%;margin-top:10px;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif}
+.k-btn-accept{background:var(--orange);color:#fff} .k-btn-ready{background:var(--green);color:#fff}
+
+.ready-sec{padding:0 14px 20px}
+.ready-title{font-size:11px;font-weight:700;color:var(--green);letter-spacing:.08em;text-transform:uppercase;padding-bottom:8px;border-bottom:2px solid var(--green);margin-bottom:10px}
+.ready-card{background:#0a1a0a;border:1px solid var(--green);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.ready-info{font-size:13px;font-weight:700;color:var(--green)}
+.ready-items{font-size:10px;color:var(--dim);margin-top:3px}
+.k-btn-served{background:var(--dim);color:#000;padding:8px 14px;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer}
+.empty-k{text-align:center;padding:30px 10px;color:var(--dim);font-size:11px}
+
+/* BATCH BUTTONS */
+.batch-bar{display:flex;gap:8px;padding:4px 14px 10px}
+.batch-btn{flex:1;padding:8px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:'Poppins',sans-serif}
+.batch-all-prep{background:var(--orange);color:#fff} .batch-all-ready{background:var(--green);color:#fff}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">🔔 नयाँ Order आयो!</div>
+
+<div class="header">
+  <div class="logo">🍳 Kitchen</div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">🍽️</a>
+    <a href="counter.html" class="nav-link">🖥️</a>
+    <a href="kitchen.html" class="nav-link active">🍳</a>
+    <a href="admin.html" class="nav-link">📊</a>
+  </div>
+</div>
+
+<div class="k-stats">
+  <div class="k-stat new-s">🔴 <span id="k-new">0</span> नयाँ</div>
+  <div class="k-stat prep-s">🔵 <span id="k-prep">0</span> बन्दै</div>
+  <div class="k-stat ready-s">🟢 <span id="k-ready">0</span> Ready</div>
+</div>
+
+<div class="voice-row">
+  🗣️ Voice Alert:
+  <div class="toggle-wrap">
+    <div class="toggle on" id="voice-toggle" onclick="toggleVoice()"></div>
+    <span id="voice-label">On</span>
+  </div>
+  &nbsp;|&nbsp;
+  🔔 Sound:
+  <div class="toggle-wrap">
+    <div class="toggle on" id="sound-toggle" onclick="toggleSound()"></div>
+    <span id="sound-label">On</span>
+  </div>
+</div>
+
+<div class="batch-bar">
+  <button class="batch-btn batch-all-prep" onclick="batchUpdateAll('new','preparing')">🍳 सबै Accept</button>
+  <button class="batch-btn batch-all-ready" onclick="batchUpdateAll('preparing','ready')">✅ सबै Ready</button>
+</div>
+
+<div class="cols">
+  <div class="col-new"><div class="col-head">🔴 नयाँ Orders</div><div id="new-col"></div></div>
+  <div class="col-prep"><div class="col-head">🔵 बन्दैछ</div><div id="prep-col"></div></div>
+</div>
+
+<div class="ready-sec">
+  <div class="ready-title">🟢 Ready — Serve गर्नुस्</div>
+  <div id="ready-col"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FC={apiKey:"AIzaSyDF-nLSnQH87KI_GTnDJXsBYzH922Ce1L4",authDomain:"menu-4819f.firebaseapp.com",projectId:"menu-4819f",storageBucket:"menu-4819f.firebasestorage.app",messagingSenderId:"449946304567",appId:"1:449946304567:web:d2c5f22ab87865aa507fb2"};
+const app=initializeApp(FC); const db=getDatabase(app);
+
+let voiceOn=true, soundOn=true;
+let prevIds=new Set(), allActiveOrders={};
+const actx=new (window.AudioContext||window.webkitAudioContext)();
+
+// ── SOUND ──
+function beep(freq,dur,type='sine'){
+  try{const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0.4,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+dur);o.start();o.stop(actx.currentTime+dur);}catch(e){}
+}
+function playNewOrder(){if(!soundOn)return;beep(660,.2,'triangle');setTimeout(()=>beep(880,.25,'triangle'),220);setTimeout(()=>beep(1100,.3,'triangle'),460);}
+
+// ── VOICE ──
+function speak(text){
+  if(!voiceOn||!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='ne-NP'; u.rate=0.9; u.pitch=1.1;
+  speechSynthesis.speak(u);
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// ── TIMER ──
+function timeAgo(ts){
+  const mins=Math.floor((Date.now()-(ts||Date.now()))/60000);
+  if(mins<1) return {label:'Just now',cls:'ok'};
+  if(mins<10) return {label:mins+'m ago',cls:'ok'};
+  if(mins<20) return {label:mins+'m ⚠️',cls:'warn'};
+  return {label:mins+'m 🔥',cls:'late'};
+}
+
+// ── FIREBASE ──
+onValue(ref(db,'orders'),snap=>{
+  allActiveOrders={};
+  const newO=[],prepO=[],readyO=[];
+  const cur=new Set(); let playSound=false;
+
+  if(snap.exists()) snap.forEach(c=>{
+    const o={id:c.key,...c.val()};
+    if(o.status==='served') return;
+    cur.add(c.key); allActiveOrders[c.key]=o;
+    if(!prevIds.has(c.key)&&o.status==='new') playSound=true;
+    if(o.status==='new') newO.push(o);
+    else if(o.status==='preparing') prepO.push(o);
+    else if(o.status==='ready') readyO.push(o);
+  });
+  // Sort oldest first
+  [newO,prepO,readyO].forEach(arr=>arr.sort((a,b)=>(a.timestamp||0)-(b.timestamp||0)));
+  prevIds=cur;
+
+  if(playSound){
+    playNewOrder();
+    const tableNums=newO.filter(o=>!prevIds.has(o.id)).map(o=>o.tableNumber).join(', ');
+    showToast(`🔔 नयाँ Order — Table ${newO.slice(-1)[0]?.tableNumber||''}`);
+    speak(`ध्यान दिनुस्! Table ${newO.slice(-1)[0]?.tableNumber||''} बाट नयाँ order आयो।`);
+  }
+
+  document.getElementById('k-new').textContent=newO.length;
+  document.getElementById('k-prep').textContent=prepO.length;
+  document.getElementById('k-ready').textContent=readyO.length;
+
+  // Render new
+  document.getElementById('new-col').innerHTML=newO.length?newO.map(o=>cardHtml(o,'new','k-btn-accept','🍳 Preparing सुरु','preparing')).join(''):'<div class="empty-k">कुनै नयाँ order छैन ✅</div>';
+  // Render preparing
+  document.getElementById('prep-col').innerHTML=prepO.length?prepO.map(o=>cardHtml(o,'preparing','k-btn-ready','✅ Ready भयो','ready')).join(''):'<div class="empty-k">बन्दैन</div>';
+  // Render ready
+  document.getElementById('ready-col').innerHTML=readyO.length?readyO.map(o=>{
+    const items=Array.isArray(o.items)?o.items:[];
+    return `<div class="ready-card">
+      <div><div class="ready-info">🟢 Table ${o.tableNumber}</div><div class="ready-items">${items.map(i=>i.name+' ×'+i.qty).join(' · ')}</div></div>
+      <button class="k-btn-served" onclick="setStatus('${o.id}','served')">Served ✓</button>
+    </div>`;
+  }).join(''):'<div class="empty-k" style="color:var(--green)">✅ सबै serve भयो</div>';
+});
+
+function cardHtml(o,cls,btnCls,btnTxt,next){
+  const items=Array.isArray(o.items)?o.items:[];
+  const time=o.timestamp?new Date(o.timestamp).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}):'';
+  const timer=timeAgo(o.timestamp);
+  const isUrgent=timer.cls==='late';
+  return `<div class="k-card ${cls}${isUrgent?' urgent':''}">
+    <div class="k-table">Table ${o.tableNumber}<span class="k-timer ${timer.cls}">${timer.label}</span></div>
+    ${o.note?`<div class="k-note">💬 ${o.note}</div>`:''}
+    ${items.map(i=>`<div class="k-item"><span>${i.name}</span><span class="k-item-qty">×${i.qty}</span></div>`).join('')}
+    <button class="k-btn ${btnCls}" onclick="setStatus('${o.id}','${next}')">${btnTxt}</button>
+  </div>`;
+}
+
+window.setStatus=function(id,status){update(ref(db,'orders/'+id),{status,updatedAt:Date.now()});};
+
+window.batchUpdateAll=function(from,to){
+  Object.values(allActiveOrders).filter(o=>o.status===from).forEach(o=>update(ref(db,'orders/'+o.id),{status:to,updatedAt:Date.now()}));
+};
+
+window.toggleVoice=function(){
+  voiceOn=!voiceOn;
+  document.getElementById('voice-toggle').className='toggle'+(voiceOn?' on':'');
+  document.getElementById('voice-label').textContent=voiceOn?'On':'Off';
+};
+window.toggleSound=function(){
+  soundOn=!soundOn;
+  document.getElementById('sound-toggle').className='toggle'+(soundOn?' on':'');
+  document.getElementById('sound-label').textContent=soundOn?'On':'Off';
+};
+</script>
+</body>
+</html>
